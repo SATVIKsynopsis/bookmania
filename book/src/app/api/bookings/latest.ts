@@ -26,7 +26,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     return res.status(200).json({ booking });
+<<<<<<< HEAD
   } catch (error: Error) { // Fixed: Changed `error: any` to `error: Error`
+=======
+  } catch (error: Error) { 
+>>>>>>> fe8e4d7 (changes1)
     console.error("Error fetching booking:", error);
     return res.status(500).json({ error: error.message || "Failed to fetch booking" });
   }

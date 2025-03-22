@@ -1,6 +1,6 @@
 "use client";
-
-import { useRouter, useSearchParams } from "next/navigation";
+import {useEffect, useState, } from "react";
+import { useRouter, useSearchParams, useParams } from "next/navigation";
 import Link from "next/link";
 import {
   StarIcon,

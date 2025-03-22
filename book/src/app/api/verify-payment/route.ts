@@ -108,11 +108,8 @@ export async function POST(request: Request) {
       { status: "success", message: "Payment verified successfully" },
       { status: 200 }
     );
-  } catch (error: any) {
+  } catch (error: Error) {
     console.error("Error verifying payment:", error);
-    return NextResponse.json(
-      { error: error.message || "Failed to verify payment" },
-      { status: 500 }
-    );
-  }
+    return NextResponse.json({ error: error.message || "Failed to verify payment" }, { status: 500 });
+}
 }

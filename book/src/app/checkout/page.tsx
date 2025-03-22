@@ -11,21 +11,27 @@ import {
 } from "@heroicons/react/24/outline";
 import { Button } from "@heroui/button";
 
-type Movie = {
+interface Movie {
   _id: string;
   title: string;
+  description: string;
   date: string;
   venue: string;
   price: number;
+  totalSeats: number;
   availableSeats: number;
   image: string;
-};
+  director?: string;
+  genre?: string;
+  duration?: number;
+}
 
-type CheckoutProps = {
-  movie: Movie;
+interface CheckoutProps {
+  item: any;
   ticketCount: number;
   onClose: () => void;
-  user: any; 
+  user: any;
+  itemType: "movie" | "sport";
 };
 
 const Checkout = ({ movie, ticketCount, onClose, user }: CheckoutProps) => {

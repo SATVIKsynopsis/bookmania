@@ -44,8 +44,8 @@ export async function POST(request: NextRequest , response: NextResponse) {
     return NextResponse.json({ message: "Show added successfully" });
         
 
-    } catch (error:any) {
-        NextResponse.json({ message: error.message });
-        
+    } catch (error: Error) {
+        console.error("Error saving show:", error);
+        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
     }
 }

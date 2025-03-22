@@ -87,11 +87,8 @@ export async function POST(request: Request) {
       currency: order.currency,
       upi: upiData,
     });
-  } catch (error: any) {
+  } catch (error: Error) {
     console.error("Error creating Razorpay order:", error);
-    return NextResponse.json(
-      { error: error.message || "Failed to create Razorpay order" },
-      { status: 500 }
-    );
-  }
+    return NextResponse.json({ error: error.message || "Failed to create order" }, { status: 500 });
+}
 }

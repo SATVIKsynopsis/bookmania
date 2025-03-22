@@ -59,17 +59,8 @@ export async function GET(request: NextRequest) {
         
         
         return NextResponse.json(sports, { status: 200 });
-    } catch (error) {
-        
-        console.error("Error fetching sports:", error);
-        
-        
-        return NextResponse.json(
-            { 
-                message: "Internal Server Error",
-                error: error instanceof Error ? error.message : "Unknown error"
-            }, 
-            { status: 500 }
-        );
+    } catch (error: Error) {
+        console.error("Error saving sport:", error);
+        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
     }
 }
