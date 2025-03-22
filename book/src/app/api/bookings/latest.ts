@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import {connectDB} from "@/lib/connectDB";
+import { connectDB } from "@/lib/connectDB";
 import Booking from "../../models/Booking";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -26,7 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     return res.status(200).json({ booking });
-  } catch (error: any) {
+  } catch (error: Error) { // Fixed: Changed `error: any` to `error: Error`
     console.error("Error fetching booking:", error);
     return res.status(500).json({ error: error.message || "Failed to fetch booking" });
   }
