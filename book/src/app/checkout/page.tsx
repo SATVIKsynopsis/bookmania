@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import {
   CheckCircleIcon,
   XCircleIcon,
@@ -26,40 +27,94 @@ interface Movie {
   duration?: number;
 }
 
+interface Sport {
+  _id: string;
+  title: string;
+  description: string;
+  date: string;
+  venue: string;
+  price: number;
+  totalSeats: number;
+  availableSeats: number;
+  image: string;
+  teams?: string[];
+  sportType?: string;
+}
+
+interface User {
+  id: string;
+  fullName?: string;
+  primaryEmailAddress?: { emailAddress: string };
+  emailAddresses?: Array<{ emailAddress: string }>;
+  phoneNumbers?: Array<{ phoneNumber: string }>;
+}
+
+interface RazorpayResponse {
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  razorpay_signature: string;
+}
+
+interface RazorpayErrorResponse {
+  error: {
+    code: string;
+    description: string;
+    source: string;
+    step: string;
+    reason: string;
+    metadata: {
+      order_id: string;
+      payment_id: string;
+    };
+  };
+}
+
 interface CheckoutProps {
-  item: any;
+  item: Movie | Sport;
   ticketCount: number;
   onClose: () => void;
-  user: any;
+  user: User;
   itemType: "movie" | "sport";
-};
+}
 
-const Checkout = ({ movie, ticketCount, onClose, user }: CheckoutProps) => {
+const Checkout = ({ item, ticketCount, onClose, user, itemType }: CheckoutProps) => {
   const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const totalPrice = (movie.price * ticketCount).toFixed(2);
+  const totalPrice = (item.price * ticketCount).toFixed(2);
+
+  useEffect(() => {
+    if (!window.Razorpay) {
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.async = true;
+      document.body.appendChild(script);
+      script.onload = () => console.log("Razorpay SDK loaded");
+      script.onerror = () => console.error("Failed to load Razorpay SDK");
+    }
+  }, []);
 
   const handleUPIPayment = async () => {
     setIsProcessing(true);
     setErrorMessage(null);
 
     try {
-      
       const response = await fetch("/api/create-razorpay-order", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-clerk-user-id": user?.id || "",
+        },
         body: JSON.stringify({
-          amount: totalPrice,
-          currency: "INR",
-          movieId: movie._id,
+          amount: parseFloat(totalPrice) * 100, // Convert to paise
+          itemId: item._id,
+          itemType,
           ticketCount,
         }),
       });
 
-      
       if (!response.ok) {
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.includes("application/json")) {
@@ -73,19 +128,6 @@ const Checkout = ({ movie, ticketCount, onClose, user }: CheckoutProps) => {
 
       const { orderId, amount, currency } = await response.json();
 
-      
-      if (!window.Razorpay) {
-        const script = document.createElement("script");
-        script.src = "https://checkout.razorpay.com/v1/checkout.js";
-        script.async = true;
-        document.body.appendChild(script);
-        await new Promise((resolve, reject) => {
-          script.onload = resolve;
-          script.onerror = () => reject(new Error("Failed to load Razorpay SDK"));
-        });
-      }
-
-      
       const prefillData = {
         name: user?.fullName || "",
         email: user?.primaryEmailAddress?.emailAddress || "",
@@ -97,13 +139,16 @@ const Checkout = ({ movie, ticketCount, onClose, user }: CheckoutProps) => {
         amount: amount,
         currency: currency,
         name: "Movie Booking",
-        description: `Tickets for ${movie.title}`,
+        description: `Tickets for ${item.title}`,
         order_id: orderId,
-        handler: async function (response: any) {
+        handler: async function (response: RazorpayResponse) {
           try {
             const verifyResponse = await fetch("/api/verify-payment", {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: {
+                "Content-Type": "application/json",
+                "x-clerk-user-id": user?.id || "",
+              },
               body: JSON.stringify({
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_order_id: response.razorpay_order_id,
@@ -121,29 +166,29 @@ const Checkout = ({ movie, ticketCount, onClose, user }: CheckoutProps) => {
               setErrorMessage("Payment verification failed");
               setIsProcessing(false);
             }
-          } catch (error) {
+          } catch (error: Error) {
             console.error("Payment verification error:", error);
-            setErrorMessage("Payment verification failed");
+            setErrorMessage(error.message || "Payment verification failed");
             setIsProcessing(false);
           }
         },
         prefill: prefillData,
         theme: { color: "#F97316" },
         modal: {
-          ondismiss: function() {
+          ondismiss: function () {
             setIsProcessing(false);
-          }
-        }
+          },
+        },
       };
 
       const paymentObject = new window.Razorpay(options);
-      paymentObject.on("payment.failed", function (response: any) {
+      paymentObject.on("payment.failed", function (response: RazorpayErrorResponse) {
         console.error("UPI payment failed:", response.error);
         setErrorMessage(response.error.description || "UPI Payment failed");
         setIsProcessing(false);
       });
       paymentObject.open();
-    } catch (error: any) {
+    } catch (error: Error) {
       console.error("UPI payment error:", error.message);
       setErrorMessage(error.message || "An unexpected error occurred with UPI. Please try again.");
       setIsProcessing(false);
@@ -160,20 +205,21 @@ const Checkout = ({ movie, ticketCount, onClose, user }: CheckoutProps) => {
           </button>
         </div>
 
-      
         <div className="bg-gray-50 rounded-lg p-4 mb-6">
           <div className="flex items-center gap-4">
-            <img
-              src={movie.image || "/placeholder-movie.jpg"}
-              alt={movie.title}
+            <Image
+              src={item.image || "/placeholder-movie.jpg"}
+              alt={item.title}
+              width={80}
+              height={112}
               className="w-20 h-28 object-cover rounded-md shadow-md"
             />
             <div>
-              <h3 className="text-lg font-semibold text-gray-800">{movie.title}</h3>
+              <h3 className="text-lg font-semibold text-gray-800">{item.title}</h3>
               <p className="text-sm text-gray-600 flex items-center mt-1">
                 <CalendarIcon className="h-4 w-4 mr-1 text-orange-600" />
-                {movie.date
-                  ? new Date(movie.date).toLocaleDateString("en-US", {
+                {item.date
+                  ? new Date(item.date).toLocaleDateString("en-US", {
                       weekday: "short",
                       day: "numeric",
                       month: "short",
@@ -182,7 +228,7 @@ const Checkout = ({ movie, ticketCount, onClose, user }: CheckoutProps) => {
               </p>
               <p className="text-sm text-gray-600 flex items-center mt-1">
                 <MapPinIcon className="h-4 w-4 mr-1 text-orange-600" />
-                {movie.venue || "TBD"}
+                {item.venue || "TBD"}
               </p>
               <p className="text-sm text-gray-600 flex items-center mt-1">
                 <UsersIcon className="h-4 w-4 mr-1 text-orange-600" />
@@ -196,7 +242,6 @@ const Checkout = ({ movie, ticketCount, onClose, user }: CheckoutProps) => {
           </div>
         </div>
 
-      
         {!paymentSuccess ? (
           <div className="space-y-6">
             <p className="text-gray-600 text-sm">
@@ -222,7 +267,7 @@ const Checkout = ({ movie, ticketCount, onClose, user }: CheckoutProps) => {
             <CheckCircleIcon className="h-16 w-16 text-green-500 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-800">Payment Successful!</h3>
             <p className="text-gray-600 mt-2">
-              Your tickets for {movie.title} have been booked.
+              Your tickets for {item.title} have been booked.
             </p>
             <Button
               onClick={() => router.push("/confirmation")}

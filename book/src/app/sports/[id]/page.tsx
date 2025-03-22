@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import type { NextPage } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import {
   StarIcon,
   CalendarIcon,
@@ -36,7 +37,6 @@ type SportEvent = {
 
 const SportEventPage: NextPage = () => {
   const params = useParams();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const id = params.id as string;
   const [event, setEvent] = useState<SportEvent | null>(null);
@@ -87,7 +87,7 @@ const SportEventPage: NextPage = () => {
         }
 
         setEvent(data);
-      } catch (err: any) {
+      } catch (err: Error) {
         console.error("Fetch error:", err.message);
         setError(err.message || "Failed to load event details. Please try again later.");
       } finally {
@@ -201,11 +201,12 @@ const SportEventPage: NextPage = () => {
           <div className="flex flex-col items-center text-center">
             {/* Poster (Centered) */}
             <div className="w-40 md:w-56 flex-shrink-0 mb-6">
-              <img
+              <Image
                 src={event.image || "/placeholder-sport.jpg"}
                 alt={`${event.title} image`}
+                width={224}
+                height={336}
                 className="w-full h-auto rounded-xl shadow-xl border-4 border-white"
-                onError={(e) => (e.currentTarget.src = "/placeholder-sport.jpg")}
               />
             </div>
             {/* Event Info */}
@@ -240,7 +241,7 @@ const SportEventPage: NextPage = () => {
                 </span>
                 <span className="flex items-center">
                   <CurrencyDollarIcon className="h-5 w-5 mr-2 text-green-400" />
-                  Starting at ₹{event.price.toFixed(2)} {/* Changed to ₹ to match Checkout */}
+                  Starting at ₹{event.price.toFixed(2)}
                 </span>
               </div>
               <div className="mt-4 flex justify-center gap-3">
@@ -327,7 +328,7 @@ const SportEventPage: NextPage = () => {
             </div>
           </div>
 
-       
+          {/* Booking Card */}
           <div className="lg:w-96 flex-shrink-0">
             <div className="lg:sticky lg:top-4 bg-white rounded-xl p-6 shadow-lg border border-gray-100">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">Book Your Tickets</h2>
@@ -399,16 +400,16 @@ const SportEventPage: NextPage = () => {
         </div>
       </div>
 
-   
+      {/* Checkout Modal */}
       {showCheckout && isSignedIn && (
-  <Checkout
-    item={event}
-    ticketCount={ticketCount}
-    onClose={() => setShowCheckout(false)}
-    user={user}
-    itemType="sport"
-  />
-)}
+        <Checkout
+          item={event}
+          ticketCount={ticketCount}
+          onClose={() => setShowCheckout(false)}
+          user={user}
+          itemType="sport"
+        />
+      )}
     </div>
   );
 };

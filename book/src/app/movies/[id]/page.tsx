@@ -1,7 +1,8 @@
 "use client";
-import {useEffect, useState, } from "react";
-import { useRouter, useSearchParams, useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useSearchParams, useParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   StarIcon,
   ClockIcon,
@@ -37,7 +38,6 @@ type Movie = {
 
 const MoviePage = () => {
   const params = useParams();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const id = params.id as string;
   const [movie, setMovie] = useState<Movie | null>(null);
@@ -88,7 +88,7 @@ const MoviePage = () => {
         }
 
         setMovie(data);
-      } catch (err: any) {
+      } catch (err: Error) {
         console.error("Fetch error:", err.message);
         setError(err.message || "Failed to load movie details. Please try again later.");
       } finally {
@@ -211,18 +211,18 @@ const MoviePage = () => {
 
   return (
     <div className="bg-gray-100 text-gray-900 font-sans">
-     
       <div className="bg-white py-12 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-orange-50 to-white opacity-50"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="flex flex-col items-center text-center">
             {/* Poster */}
             <div className="w-40 md:w-56 flex-shrink-0 mb-6 relative">
-              <img
+              <Image
                 src={movie.image || "/placeholder-movie.jpg"}
                 alt={`${movie.title} poster`}
+                width={224}
+                height={336}
                 className="w-full h-auto rounded-xl shadow-2xl border-4 border-white transform hover:scale-105 transition-transform duration-300"
-                onError={(e) => (e.currentTarget.src = "/placeholder-movie.jpg")}
               />
             </div>
             <div className="pt-4">
@@ -288,9 +288,7 @@ const MoviePage = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="flex flex-col lg:flex-row gap-8">
-          
           <div className="flex-1">
-         
             <div className="bg-white rounded-xl p-4 shadow-md flex flex-wrap gap-4 items-center">
               <span className="flex items-center text-gray-700">
                 <UsersIcon className="h-5 w-5 mr-2 text-orange-600" />
@@ -302,7 +300,6 @@ const MoviePage = () => {
               </span>
             </div>
 
-           
             <div className="mt-6 bg-white rounded-xl p-6 shadow-md">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">About the Movie</h2>
               <p className="text-gray-600 leading-relaxed">
@@ -310,7 +307,6 @@ const MoviePage = () => {
               </p>
             </div>
 
-          
             <div className="mt-6 bg-white rounded-xl p-6 shadow-md">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">Movie Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -350,7 +346,6 @@ const MoviePage = () => {
             </div>
           </div>
 
-         
           <div className="lg:w-96 flex-shrink-0">
             <div className="lg:sticky lg:top-4 bg-white rounded-xl p-6 shadow-lg border border-gray-100">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">Book Your Tickets</h2>
@@ -422,7 +417,6 @@ const MoviePage = () => {
         </div>
       </div>
 
-      {/* Checkout Modal */}
       {showCheckout && isSignedIn && (
         <Checkout
           item={movie}
